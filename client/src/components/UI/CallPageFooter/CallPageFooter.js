@@ -10,9 +10,14 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import "./CallPageFooter.scss";
 
-
-const CallPageFooter = () => {
-
+const CallPageFooter = ({
+    isPresenting,
+    stopScreenShare,
+    screenShare,
+    isAudio,
+    toggleAudio,
+    disConnectCall,
+}) => {
     return (
         <div className="footer-item">
             <div className="left-item">
@@ -22,14 +27,15 @@ const CallPageFooter = () => {
                 </div>
             </div>
             <div className="center-item">
-                <div className="icon-block">
+                <div className={`icon-block ${!isAudio ? "red-bg" : null}`}
+                    onClick={() => toggleAudio(!isAudio)}>
                     <FontAwesomeIcon
                         className="icon"
-                        icon={faMicrophone}
+                        icon={isAudio ? faMicrophone : faMicrophoneSlash}
                     />
                 </div>
-                <div className="icon-block">
-                    <FontAwesomeIcon className="icon" icon={faPhone} />
+                <div className="icon-block" onClick={disConnectCall}>
+                    <FontAwesomeIcon className="icon red" icon={faPhone} />
                 </div>
                 <div className="icon-block">
                     <FontAwesomeIcon className="icon" icon={faVideo} />
@@ -37,13 +43,20 @@ const CallPageFooter = () => {
             </div>
             <div className="right-item">
                 <div className="icon-block">
-                    <FontAwesomeIcon className="icon" icon={faClosedCaptioning} />
+                    <FontAwesomeIcon className="icon red" icon={faClosedCaptioning} />
                     <p className="title">Turn on captions</p>
                 </div>
-                <div className="icon-block">
-                    <FontAwesomeIcon className="icon" icon={faDesktop} />
-                    <p className="title">Stop presenting</p>
-                </div>
+                {isPresenting ? (
+                    <div className="icon-block" onClick={stopScreenShare}>
+                        <FontAwesomeIcon className="icon red" icon={faDesktop} />
+                        <p className="title">Stop presenting</p>
+                    </div>) : (
+                    <div className="icon-block" onClick={screenShare}>
+                        <FontAwesomeIcon className="icon red" icon={faDesktop} />
+                        <p className="title">Present Now</p>
+                    </div>
+                )}
+
 
             </div>
         </div>

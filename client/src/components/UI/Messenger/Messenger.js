@@ -1,4 +1,4 @@
-
+import { useState } from "react";
 import "./Messenger.scss";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -7,8 +7,28 @@ import {
     faCommentAlt,
     faPaperPlane,
 } from "@fortawesome/free-solid-svg-icons";
+import { formatDate } from "../../../utils/helper";
 
-const Messenger = () => {
+const Messenger = ({ setIsMessenger, sendMsg, messageList }) => {
+    const [msg, setMsg] = useState("");
+    const handleChangeMsg = (e) => {
+        setMsg(e.target.value);
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === "Enter") {
+            setMsg("");
+            sendMsg(msg);
+
+        }
+    };
+
+    const handleSendMsg = () => {
+        console.log("trying to send message...")
+        setMsg("");
+        sendMsg(msg);
+
+    };
     return (
         <div className="messenger-container">
             <div className="messenger-header">
@@ -16,6 +36,9 @@ const Messenger = () => {
                 <FontAwesomeIcon
                     className="icon"
                     icon={faTimes}
+                    onClick={() => {
+                        setIsMessenger(false);
+                    }}
                 />
             </div>
 
@@ -31,21 +54,27 @@ const Messenger = () => {
             </div>
 
             <div className="chat-section">
-                <div className="chat-block">
-                    <div className="sender">
-                        <small>10 am</small>
+                {messageList.map((item) => (
+                    <div key={item.time} className="chat-block">
+                        <div className="sender">
+                            {item.user} <small>{formatDate(item.time)}</small>
+                        </div>
+                        <p className="msg">{item.msg}</p>
                     </div>
-                    <p className="msg">some messege</p>
-                </div>
+                ))}
             </div>
 
             <div className="send-msg-section">
                 <input
                     placeholder="Send a message to everyone"
+                    value={msg}
+                    onChange={(e) => handleChangeMsg(e)}
+                    onKeyDown={(e) => handleKeyDown(e)}
                 />
                 <FontAwesomeIcon
                     className="icon"
                     icon={faPaperPlane}
+                    onClick={handleSendMsg}
                 />
             </div>
         </div>
