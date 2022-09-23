@@ -9,7 +9,7 @@ function App() {
     <div className="App">
       <Router>
         <Switch>
-          <Route exact path="/:id">
+          <Route exact path="/room/:id">
             <CallPage />
           </Route>
           <Route exact path="/" >

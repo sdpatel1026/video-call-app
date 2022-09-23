@@ -24,7 +24,7 @@ export const getRequest = async (url) => {
         .catch(err => (
             { error: err.response.data }
         ));
-    return data;
+    return data
 }
 
 export const deleteRequest = async (url) => {
