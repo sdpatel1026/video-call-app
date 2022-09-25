@@ -9,7 +9,7 @@ import { useHistory } from "react-router-dom";
 import Peer from "simple-peer";
 import io from "socket.io-client";
 import {
-    BASE_URL,
+    SERVER_BASE_URL,
     GET_CALL_ID,
     SAVE_CALL_ID,
 } from "./../../utils/apiEndpoints";
@@ -35,7 +35,7 @@ const CallPages = () => {
         initialState
     );
     const [streamObj, setStreamObj] = useState();
-   
+
     const [screenCastStream, setScreenCastStream] = useState();
     const [meetInfoPopup, setMeetInfoPopup] = useState(false);
     const [isPresenting, setIsPresenting] = useState(false);
@@ -62,7 +62,7 @@ const CallPages = () => {
     const getRecieverCode = async () => {
         console.log("getRecieverCode");
         console.log("ID: ", id)
-        const response = await getRequest(`${BASE_URL}${GET_CALL_ID}/${id}`);
+        const response = await getRequest(`${SERVER_BASE_URL}${GET_CALL_ID}/${id}`);
         console.log("response:", response)
         if (response.code) {
             console.log("peer.signal(signal)");
@@ -100,7 +100,7 @@ const CallPages = () => {
                             id,
                             signalData: data,
                         };
-                        await postRequest(`${BASE_URL}${SAVE_CALL_ID}`, payload);
+                        await postRequest(`${SERVER_BASE_URL}${SAVE_CALL_ID}`, payload);
                     } else {
                         console.log("trying to emit code through socket")
                         socket.emit("code", { code: data, meetUrl }, (cbData) => {

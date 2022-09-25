@@ -3,15 +3,16 @@ import Header from '../UI/Header/Header'
 import { useHistory } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faVideo, faKeyboard } from "@fortawesome/free-solid-svg-icons";
-import { BASE_URL, CREATE_ROOM } from "../../utils/apiEndpoints";
+import { SERVER_BASE_URL_HTTP, CREATE_ROOM } from "../../utils/apiEndpoints";
 import { getRequest } from "../../utils/apiRequest";
 
 
 const HomePage = () => {
   const history = useHistory();
   const startCall = async () => {
-
-    const response = await getRequest(`${BASE_URL}${CREATE_ROOM}`);
+    console.log("preoces enc", process.env);
+    console.log("create-room:", `${SERVER_BASE_URL_HTTP}${CREATE_ROOM}`);
+    const response = await getRequest(`${SERVER_BASE_URL_HTTP}${CREATE_ROOM}`);
     if (response.Result) {
       const roomID = response.Result.room_id;
       history.push(`/room/${roomID}#init`)

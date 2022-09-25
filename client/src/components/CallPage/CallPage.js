@@ -8,7 +8,7 @@ import MessageListReducer from "./../../reducers/MessageListReducer";
 import { useHistory } from "react-router-dom";
 import {
     JOIN_ROOM,
-    WS_BASE_URL,
+    SERVER_BASE_URL_WS,
 } from "./../../utils/apiEndpoints";
 import { useParams } from "react-router-dom";
 import { useEffect, useState, useReducer, useRef } from "react";
@@ -21,7 +21,7 @@ const CallPage = () => {
     console.log("CallPage()...")
     const history = useHistory();
     let { id } = useParams();
-    const joinUrl = `${WS_BASE_URL}${JOIN_ROOM}?room_id=${id}`;
+    const joinUrl = `${SERVER_BASE_URL_WS}${JOIN_ROOM}?room_id=${id}`;
     const meetUrl = `${window.location.origin}${window.location.pathname}`;
     // console.log("meeturl: ", meetUrl)    
     const isAdmin = window.location.hash == "#init" ? true : false;
@@ -109,7 +109,7 @@ const CallPage = () => {
         messageListReducer({
             type: "addMessage",
             payload: {
-                user: "you",
+                user: "You",
                 msg: msg,
                 time: Date.now(),
             },
@@ -239,7 +239,7 @@ const CallPage = () => {
         messageListReducer({
             type: "addMessage",
             payload: {
-                user: "other",
+                user: "Peer",
                 msg: data.toString(),
                 time: Date.now(),
             },
@@ -250,7 +250,7 @@ const CallPage = () => {
             alert: true,
             isPopup: true,
             payload: {
-                user: "other",
+                user: "Peer",
                 msg: data.toString(),
             },
         });
