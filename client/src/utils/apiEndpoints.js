@@ -5,3 +5,4 @@ export const GET_CALL_ID = "/api/get-call-id";
 
 export const CREATE_ROOM = "/room";
 export const JOIN_ROOM = "/join";
+export const WS_BASE_URL = "ws://localhost:8000"
