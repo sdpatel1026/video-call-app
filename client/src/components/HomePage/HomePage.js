@@ -3,8 +3,7 @@ import Header from '../UI/Header/Header'
 import { useHistory } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faVideo, faKeyboard } from "@fortawesome/free-solid-svg-icons";
-import { BASE_URL, CREATE_ROOM, JOIN_ROOM } from "../../utils/apiEndpoints";
-import shortid from "shortid";
+import { BASE_URL, CREATE_ROOM } from "../../utils/apiEndpoints";
 import { getRequest } from "../../utils/apiRequest";
 
 
@@ -13,7 +12,6 @@ const HomePage = () => {
   const startCall = async () => {
 
     const response = await getRequest(`${BASE_URL}${CREATE_ROOM}`);
-    // console.log("res", response)
     if (response.Result) {
       const roomID = response.Result.room_id;
       history.push(`/room/${roomID}#init`)

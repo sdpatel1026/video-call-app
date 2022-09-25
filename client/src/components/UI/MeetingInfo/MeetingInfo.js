@@ -28,7 +28,6 @@ const MeetingInfo = ({ setMeetInfoPopup, meetUrl }) => {
             </p>
             <div className="meet-link">
                 <span>{meetUrl}</span>
-                {console.log("meet info", meetUrl)}
                 <FontAwesomeIcon
                     className="icon"
                     icon={faCopy}

@@ -6,32 +6,31 @@ import CallPageFooter from "../UI/CallPageFooter/CallPageFooter";
 import Messenger from "../UI/Messenger/Messenger"
 import MessageListReducer from "./../../reducers/MessageListReducer";
 import { useHistory } from "react-router-dom";
-import io from "socket.io-client";
 import {
-    BASE_URL,
     JOIN_ROOM,
+    WS_BASE_URL,
 } from "./../../utils/apiEndpoints";
-import { getRequest, postRequest } from "./../../utils/apiRequest";
 import { useParams } from "react-router-dom";
 import { useEffect, useState, useReducer, useRef } from "react";
 
 
-let peer = null
-let socket = null;
 const initialState = [];
-
+let peer = null
+let channel = null
 const CallPage = () => {
     console.log("CallPage()...")
     const history = useHistory();
     let { id } = useParams();
-    const joinUrl = `${BASE_URL}${JOIN_ROOM}?roomID=${id}`;
+    const joinUrl = `${WS_BASE_URL}${JOIN_ROOM}?room_id=${id}`;
     const meetUrl = `${window.location.origin}${window.location.pathname}`;
-    console.log("meeturl: ", meetUrl)
+    // console.log("meeturl: ", meetUrl)    
     const isAdmin = window.location.hash == "#init" ? true : false;
     let alertTimeout = null;
     const userVideo = useRef();
     const userStream = useRef();
     const partnerVideo = useRef();
+    const webSocketRef = useRef();
+    const peerRef = useRef();
     const [messageList, messageListReducer] = useReducer(
         MessageListReducer,
         initialState
@@ -46,10 +45,11 @@ const CallPage = () => {
     const [isAudio, setIsAudio] = useState(true);
 
     useEffect(() => {
-        socket = io.connect(joinUrl)
+
         if (isAdmin) {
             setMeetInfoPopup(true)
         }
+
         initWebRTC();
     }, []);
 
@@ -58,17 +58,44 @@ const CallPage = () => {
         navigator.mediaDevices
             .getUserMedia({
                 video: true,
-                audio: true
+                audio: true,
             })
             .then((stream) => {
-                setStreamObj(stream)
-                userVideo.current.srcObject = stream
+                // setStreamObj(stream)
+                // userVideo.current.srcObject = stream
                 userStream.current = stream
-                io.on("connection", () => {
-                    console.log("connected to the room")
-                    io.emmit("join", { join: "true" });
-                })
+                webSocketRef.current = new WebSocket(joinUrl)
+                webSocketRef.current.addEventListener("open", () => {
+                    console.log("websocker event listner:open")
+                    webSocketRef.current.send(JSON.stringify({ join: true }));
+                });
+                webSocketRef.current.addEventListener("message", async (e) => {
+                    const message = JSON.parse(e.data);
+                    if (message.join) {
+                        callUser();
+                    }
 
+                    if (message.offer) {
+                        handelOffer(message.offer);
+                    }
+
+                    if (message.answer) {
+                        console.log("receiving answer");
+                        peerRef.current.setRemoteDescription(
+                            new RTCSessionDescription(message.answer)
+                        );
+                    }
+                    if (message.iceCandidate) {
+                        console.log("Receiving and Adding ICE Candidate");
+                        try {
+                            await peerRef.current.addIceCandidate(
+                                message.iceCandidate
+                            );
+                        } catch (err) {
+                            console.log("Error Receiving ICE Candidate", err);
+                        }
+                    }
+                });
 
             })
             .catch(() => { });
@@ -77,8 +104,8 @@ const CallPage = () => {
 
 
     const sendMsg = (msg) => {
-        peer.send(msg);
-        // peer.write(msg)
+        console.log("trying to send message:", msg)
+        channel.send(msg)
         messageListReducer({
             type: "addMessage",
             payload: {
@@ -92,17 +119,17 @@ const CallPage = () => {
         navigator.mediaDevices
             .getDisplayMedia({ cursor: true })
             .then((screenStream) => {
-                peer.replaceTrack(
-                    streamObj.getVideoTracks()[0],
+                peerRef.current.replaceTrack(
+                    userStream.current.getVideoTracks()[0],
                     screenStream.getVideoTracks()[0],
-                    streamObj
+                    userStream.current
                 );
                 setScreenCastStream(screenStream);
                 screenStream.getTracks()[0].onended = () => {
-                    peer.replaceTrack(
+                    peerRef.current.replaceTrack(
                         screenStream.getVideoTracks()[0],
-                        streamObj.getVideoTracks()[0],
-                        streamObj
+                        userStream.current.getVideoTracks()[0],
+                        userStream.current
                     );
                 };
                 setIsPresenting(true);
@@ -112,15 +139,15 @@ const CallPage = () => {
         screenCastStream.getVideoTracks().forEach(function (track) {
             track.stop();
         });
-        peer.replaceTrack(
+        peerRef.current.replaceTrack(
             screenCastStream.getVideoTracks()[0],
-            streamObj.getVideoTracks()[0],
-            streamObj
+            userStream.current.getVideoTracks()[0],
+            userStream.current
         );
         setIsPresenting(false);
     };
     const toggleAudio = (value) => {
-        streamObj.getAudioTracks()[0].enabled = value;
+        userStream.current.getAudioTracks()[0].enabled = value;
         setIsAudio(value);
     };
     const disConnectCall = () => {
@@ -130,9 +157,115 @@ const CallPage = () => {
         window.location.reload();
 
     };
+
+    const handelOffer = async (offer) => {
+        console.log("offer received, creating answer");
+        peerRef.current = createPeer();
+        await peerRef.current.setRemoteDescription(
+            new RTCSessionDescription(offer)
+        )
+        userStream.current.getTracks().forEach((track) => {
+            peerRef.current.addTrack(track, userStream.current);
+        });
+        const answer = await peerRef.current.createAnswer();
+        await peerRef.current.setLocalDescription(answer);
+
+        webSocketRef.current.send(
+            JSON.stringify({ answer: peerRef.current.localDescription })
+        );
+    };
+    const callUser = () => {
+        console.log("Calling Other User");
+        peerRef.current = createPeer();
+
+        userStream.current.getTracks().forEach((track) => {
+            peerRef.current.addTrack(track, userStream.current);
+        });
+    };
+    const createPeer = () => {
+        console.log("Creating Peer Connection");
+        const peer = new RTCPeerConnection({
+            iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+        });
+        peer.onnegotiationneeded = handleNegotiationNeeded;
+        peer.onicecandidate = handleIceCandidateEvent;
+        peer.ontrack = handleTrackEvent;
+        peer.ondatachannel = handleDataChannel;
+        channel = peer.createDataChannel('data');
+        channel.onmessage = handleMessage;
+
+        return peer;
+    };
+
+    const handleDataChannel = (e) => {
+        console.log("trying to handle data channel");
+        channel = e.channel;
+        channel.onmessage = handleMessage;
+
+    }
+    const handleNegotiationNeeded = async () => {
+        console.log("Creating Offer");
+
+        try {
+            const myOffer = await peerRef.current.createOffer();
+            await peerRef.current.setLocalDescription(myOffer);
+
+            webSocketRef.current.send(
+                JSON.stringify({ offer: peerRef.current.localDescription })
+            );
+        } catch (err) {
+            console.log("getting error during handling negotiation:", err)
+        }
+    };
+
+    const handleIceCandidateEvent = (e) => {
+        console.log("Found Ice Candidate");
+        if (e.candidate) {
+            console.log(e.candidate);
+            webSocketRef.current.send(
+                JSON.stringify({ iceCandidate: e.candidate })
+            );
+        }
+    };
+
+    const handleTrackEvent = (e) => {
+        console.log("Received Tracks");
+        partnerVideo.current.srcObject = e.streams[0];
+    };
+    const handleMessage = (e) => {
+        console.log("trying to handle incoming message:", e.data)
+        let data = e.data
+        clearTimeout(alertTimeout);
+        messageListReducer({
+            type: "addMessage",
+            payload: {
+                user: "other",
+                msg: data.toString(),
+                time: Date.now(),
+            },
+        });
+
+
+        setMessageAlert({
+            alert: true,
+            isPopup: true,
+            payload: {
+                user: "other",
+                msg: data.toString(),
+            },
+        });
+
+        alertTimeout = setTimeout(() => {
+            setMessageAlert({
+                ...messageAlert,
+                isPopup: false,
+                payload: {},
+            });
+        }, 10000);
+    };
     return (
         <div className="callpage-container">
-            <video className="video-container" src="" autoPlay controls={true} ref={userVideo}></video>
+            <video className="video-container" src="" autoPlay controls={true} ref={partnerVideo}></video>
             <CallPageHeader
                 isMessenger={isMessenger}
                 setIsMessenger={setIsMessenger}
