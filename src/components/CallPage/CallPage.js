@@ -60,13 +60,14 @@ const CallPage = () => {
                 // setStreamObj(stream)
                 // userVideo.current.srcObject = stream
                 localStream.current = stream
-                partnerVideo.current.srcObject = stream
+                userVideo.current.srcObject = stream
                 webSocketRef.current = new WebSocket(joinUrl)
                 webSocketRef.current.addEventListener("open", () => {
                     console.log("websocket event listner:open")
                     webSocketRef.current.send(JSON.stringify({ join: true }));
                 });
                 webSocketRef.current.addEventListener("message", async (e) => {
+                    console.log("getting some signal")
                     const message = JSON.parse(e.data);
                     if (message.join) {
                         callUser();
@@ -280,16 +281,20 @@ const CallPage = () => {
     };
     return (
         <div className="callpage-container">
-            <video className="video-container" src="" autoPlay controls={true} ref={partnerVideo}></video>
+
+            <video className="partner-video-container" src="" autoPlay controls={true} ref={partnerVideo}></video>
+            <video className="user-video-container" src="" autoPlay controls={true} ref={userVideo}></video>
             <CallPageHeader
                 isMessenger={isMessenger}
                 setIsMessenger={setIsMessenger}
                 messageAlert={messageAlert}
                 setMessageAlert={setMessageAlert} />
 
-            {meetInfoPopup && (
-                < MeetingInfo setMeetInfoPopup={setMeetInfoPopup} meetUrl={meetUrl} />
-            )}
+            {
+                meetInfoPopup && (
+                    < MeetingInfo setMeetInfoPopup={setMeetInfoPopup} meetUrl={meetUrl} />
+                )
+            }
             <CallPageFooter
                 isPresenting={isPresenting}
                 stopScreenShare={stopScreenShare}
@@ -301,16 +306,18 @@ const CallPage = () => {
                 disConnectCall={disConnectCall}
                 meetInfoPopup={meetInfoPopup}
                 setMeetInfoPopup={setMeetInfoPopup} />
-            {isMessenger ? (
-                <Messenger
-                    setIsMessenger={setIsMessenger}
-                    sendMsg={sendMsg}
-                    messageList={messageList}
-                />
-            ) : (
-                messageAlert.isPopup && <Alert messageAlert={messageAlert} />
-            )}
-        </div>
+            {
+                isMessenger ? (
+                    <Messenger
+                        setIsMessenger={setIsMessenger}
+                        sendMsg={sendMsg}
+                        messageList={messageList}
+                    />
+                ) : (
+                    messageAlert.isPopup && <Alert messageAlert={messageAlert} />
+                )
+            }
+        </div >
     );
 };
 
