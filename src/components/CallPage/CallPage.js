@@ -23,11 +23,10 @@ const CallPage = () => {
     let { id } = useParams();
     const joinUrl = `${SERVER_BASE_URL_WS}${JOIN_ROOM}?room_id=${id}`;
     const meetUrl = `${window.location.origin}${window.location.pathname}`;
-    // console.log("meeturl: ", meetUrl)    
-    const isAdmin = window.location.hash == "#init" ? true : false;
+    // const isAdmin = window.location.hash == "#init" ? true : false;
     let alertTimeout = null;
     const userVideo = useRef();
-    const userStream = useRef();
+    const localStream = useRef();
     const partnerVideo = useRef();
     const webSocketRef = useRef();
     const peerRef = useRef();
@@ -43,12 +42,9 @@ const CallPage = () => {
     const [isMessenger, setIsMessenger] = useState(false);
     const [messageAlert, setMessageAlert] = useState({});
     const [isAudio, setIsAudio] = useState(true);
+    const [isVideo, setIsVideo] = useState(true)
 
     useEffect(() => {
-
-        if (isAdmin) {
-            setMeetInfoPopup(true)
-        }
 
         initWebRTC();
     }, []);
@@ -63,10 +59,11 @@ const CallPage = () => {
             .then((stream) => {
                 // setStreamObj(stream)
                 // userVideo.current.srcObject = stream
-                userStream.current = stream
+                localStream.current = stream
+                partnerVideo.current.srcObject = stream
                 webSocketRef.current = new WebSocket(joinUrl)
                 webSocketRef.current.addEventListener("open", () => {
-                    console.log("websocker event listner:open")
+                    console.log("websocket event listner:open")
                     webSocketRef.current.send(JSON.stringify({ join: true }));
                 });
                 webSocketRef.current.addEventListener("message", async (e) => {
@@ -104,32 +101,36 @@ const CallPage = () => {
 
 
     const sendMsg = (msg) => {
-        console.log("trying to send message:", msg)
-        channel.send(msg)
-        messageListReducer({
-            type: "addMessage",
-            payload: {
-                user: "You",
-                msg: msg,
-                time: Date.now(),
-            },
-        });
+        if (channel) {
+            channel.send(msg)
+            messageListReducer({
+                type: "addMessage",
+                payload: {
+                    user: "You",
+                    msg: msg,
+                    time: Date.now(),
+                },
+            });
+        } else {
+            alert("Sorry! No one is there to receive your message")
+        }
+
     };
     const screenShare = () => {
         navigator.mediaDevices
             .getDisplayMedia({ cursor: true })
             .then((screenStream) => {
                 peerRef.current.replaceTrack(
-                    userStream.current.getVideoTracks()[0],
+                    localStream.current.getVideoTracks()[0],
                     screenStream.getVideoTracks()[0],
-                    userStream.current
+                    localStream.current
                 );
                 setScreenCastStream(screenStream);
                 screenStream.getTracks()[0].onended = () => {
                     peerRef.current.replaceTrack(
                         screenStream.getVideoTracks()[0],
-                        userStream.current.getVideoTracks()[0],
-                        userStream.current
+                        localStream.current.getVideoTracks()[0],
+                        localStream.current
                     );
                 };
                 setIsPresenting(true);
@@ -141,46 +142,35 @@ const CallPage = () => {
         });
         peerRef.current.replaceTrack(
             screenCastStream.getVideoTracks()[0],
-            userStream.current.getVideoTracks()[0],
-            userStream.current
+            localStream.current.getVideoTracks()[0],
+            localStream.current
         );
         setIsPresenting(false);
     };
     const toggleAudio = (value) => {
-        userStream.current.getAudioTracks()[0].enabled = value;
+        localStream.current.getAudioTracks()[0].enabled = value;
         setIsAudio(value);
     };
+    const toggleVideo = (value) => {
+        console.log("toggling video:", value)
+        localStream.current.getVideoTracks()[0].enabled = value;
+        setIsVideo(value)
+    }
     const disConnectCall = () => {
-        console.log("disconnected");
-        peer.destroy();
+
+        if (peerRef.current) {
+            peerRef.current.onnegotiationneeded = null;
+            peerRef.current.onicecandidate = null;
+            peerRef.current.ontrack = null;
+            peerRef.current.ondatachannel = null;
+            channel.close();
+            peerRef.current.close();
+            console.log("disconnected");
+        }
+
         history.push("/");
         window.location.reload();
 
-    };
-
-    const handelOffer = async (offer) => {
-        console.log("offer received, creating answer");
-        peerRef.current = createPeer();
-        await peerRef.current.setRemoteDescription(
-            new RTCSessionDescription(offer)
-        )
-        userStream.current.getTracks().forEach((track) => {
-            peerRef.current.addTrack(track, userStream.current);
-        });
-        const answer = await peerRef.current.createAnswer();
-        await peerRef.current.setLocalDescription(answer);
-
-        webSocketRef.current.send(
-            JSON.stringify({ answer: peerRef.current.localDescription })
-        );
-    };
-    const callUser = () => {
-        console.log("Calling Other User");
-        peerRef.current = createPeer();
-
-        userStream.current.getTracks().forEach((track) => {
-            peerRef.current.addTrack(track, userStream.current);
-        });
     };
     const createPeer = () => {
         console.log("Creating Peer Connection");
@@ -196,6 +186,31 @@ const CallPage = () => {
 
         return peer;
     };
+    const handelOffer = async (offer) => {
+        console.log("offer received, creating answer");
+        peerRef.current = createPeer();
+        await peerRef.current.setRemoteDescription(
+            new RTCSessionDescription(offer)
+        )
+        localStream.current.getTracks().forEach((track) => {
+            peerRef.current.addTrack(track, localStream.current);
+        });
+        const answer = await peerRef.current.createAnswer();
+        await peerRef.current.setLocalDescription(answer);
+
+        webSocketRef.current.send(
+            JSON.stringify({ answer: peerRef.current.localDescription })
+        );
+    };
+    const callUser = () => {
+        console.log("Calling Other User");
+        peerRef.current = createPeer();
+
+        localStream.current.getTracks().forEach((track) => {
+            peerRef.current.addTrack(track, localStream.current);
+        });
+    };
+
 
     const handleDataChannel = (e) => {
         console.log("trying to handle data channel");
@@ -272,7 +287,7 @@ const CallPage = () => {
                 messageAlert={messageAlert}
                 setMessageAlert={setMessageAlert} />
 
-            {isAdmin && meetInfoPopup && (
+            {meetInfoPopup && (
                 < MeetingInfo setMeetInfoPopup={setMeetInfoPopup} meetUrl={meetUrl} />
             )}
             <CallPageFooter
@@ -281,7 +296,11 @@ const CallPage = () => {
                 screenShare={screenShare}
                 isAudio={isAudio}
                 toggleAudio={toggleAudio}
-                disConnectCall={disConnectCall} />
+                isVideo={isVideo}
+                toggleVideo={toggleVideo}
+                disConnectCall={disConnectCall}
+                meetInfoPopup={meetInfoPopup}
+                setMeetInfoPopup={setMeetInfoPopup} />
             {isMessenger ? (
                 <Messenger
                     setIsMessenger={setIsMessenger}

@@ -5,9 +5,12 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faVideo, faKeyboard } from "@fortawesome/free-solid-svg-icons";
 import { SERVER_BASE_URL_HTTP, CREATE_ROOM } from "../../utils/apiEndpoints";
 import { getRequest } from "../../utils/apiRequest";
+import { useState } from "react";
 
 
 const HomePage = () => {
+
+  const [meetingID, setMeetingID] = useState("");
   const history = useHistory();
   const startCall = async () => {
     console.log("preoces enc", process.env);
@@ -24,6 +27,16 @@ const HomePage = () => {
     // history.push(`/${uid}#init`);
 
   };
+  const joinMeeting = () => {
+    if (!meetingID || (meetingID.includes("/room") || meetingID.includes("/"))) {
+      setMeetingID("");
+    } else {
+      // console.log("info: ", meetingID)
+      history.push(`/room/${meetingID}`);
+    }
+
+
+  }
   return (
     <div className='home-page'>
       <Header />
@@ -43,9 +56,9 @@ const HomePage = () => {
               <div className="input-block">
                 <div className="input-section">
                   <FontAwesomeIcon className="icon-block" icon={faKeyboard} />
-                  <input placeholder="Enter a code or link" />
+                  <input placeholder="Enter a code" type="text" value={meetingID} onChange={(e) => setMeetingID(e.target.value)} />
                 </div>
-                <button className="btn no-bg">Join</button>
+                <button className="btn no-bg" onClick={() => joinMeeting()}>Join</button>
               </div>
             </div>
           </div>

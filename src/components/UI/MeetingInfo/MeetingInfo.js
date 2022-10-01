@@ -10,7 +10,7 @@ const MeetingInfo = ({ setMeetInfoPopup, meetUrl }) => {
     return (
         <div className="meeting-info-block">
             <div className="meeting-header">
-                <h3>Your meeting's ready</h3>``
+                <h3>Meeting Info</h3>
                 <FontAwesomeIcon
                     className="icon"
                     icon={faTimes}
@@ -19,12 +19,8 @@ const MeetingInfo = ({ setMeetInfoPopup, meetUrl }) => {
                     }}
                 />
             </div>
-            <button className="add-people-btn">
-                <FontAwesomeIcon className="icon" icon={faUser} />
-                Add Others
-            </button>
             <p className="info-text">
-                Or share this meeting link with others you want in the meeting
+                share this meeting link with others you want in the meeting
             </p>
             <div className="meet-link">
                 <span>{meetUrl}</span>
@@ -41,7 +37,6 @@ const MeetingInfo = ({ setMeetInfoPopup, meetUrl }) => {
                     can join.
                 </p>
             </div>
-            <p className="small-text">Joined as xyz@gmail.com</p>
         </div>
     );
 };

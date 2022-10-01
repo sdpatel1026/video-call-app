@@ -31,7 +31,7 @@ const Messenger = ({ setIsMessenger, sendMsg, messageList }) => {
     };
     return (
         <div className="messenger-container">
-            <div className="messenger-header">
+            {/* <div className="messenger-header">
                 <h3>Meeting details</h3>
                 <FontAwesomeIcon
                     className="icon"
@@ -40,17 +40,26 @@ const Messenger = ({ setIsMessenger, sendMsg, messageList }) => {
                         setIsMessenger(false);
                     }}
                 />
-            </div>
+            </div> */}
 
             <div className="messenger-header-tabs">
-                <div className="tab">
+                {/* <div className="tab">
                     <FontAwesomeIcon className="icon" icon={faUserFriends} />
                     <p>People (1)</p>
-                </div>
+                </div> */}
                 <div className="tab active">
                     <FontAwesomeIcon className="icon" icon={faCommentAlt} />
                     <p>Chat</p>
+                    <FontAwesomeIcon
+                        className="icon"
+                        icon={faTimes}
+                        onClick={() => {
+                            setIsMessenger(false);
+                        }}
+                    />
                 </div>
+
+
             </div>
 
             <div className="chat-section">
