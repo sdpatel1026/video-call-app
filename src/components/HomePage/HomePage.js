@@ -58,12 +58,12 @@ const HomePage = () => {
             </div>
           </div>
           <div className="help-text">
-            <a href="">Learn more</a> about P2P Meet
+            <a href="/">Learn more</a> about P2P Meet
           </div>
         </div>
         <div className="right-side">
           <div className="content">
-            <img src={meetingGridImg} />
+            <img src={meetingGridImg} alt="meeting-grid" />
           </div>
         </div>
       </div>

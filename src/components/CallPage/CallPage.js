@@ -43,6 +43,7 @@ const CallPage = () => {
     useEffect(() => {
 
         initWebRTC();
+        // eslint-disable-next-line
     }, []);
 
     const initWebRTC = () => {

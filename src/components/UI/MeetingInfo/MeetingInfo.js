@@ -2,7 +2,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
     faCopy,
     faTimes,
-    faUser,
     faShieldAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import "./MeetingInfo.scss";

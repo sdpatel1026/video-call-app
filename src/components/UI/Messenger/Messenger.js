@@ -3,7 +3,6 @@ import "./Messenger.scss";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
     faTimes,
-    faUserFriends,
     faCommentAlt,
     faPaperPlane,
 } from "@fortawesome/free-solid-svg-icons";
