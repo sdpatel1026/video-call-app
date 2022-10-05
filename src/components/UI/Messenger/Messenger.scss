@@ -36,7 +36,6 @@
     .tab {
       display: flex;
       align-items: center;
-      justify-content: center;
       width: 100%;
       color: #555;
 
@@ -46,8 +45,12 @@
 
       .icon {
         cursor: pointer;
-        font-size: 20px;
-        margin-left: 50px;
+        font-size: 22px;
+        margin-left: 25px;
+      }
+
+      .cross-icon {
+        margin-left: 220px;
       }
 
 

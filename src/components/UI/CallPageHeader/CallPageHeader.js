@@ -35,10 +35,10 @@ const CallPageHeader = ({
           setIsMessenger(true);
           setMessageAlert({});
         }}>
-        <FontAwesomeIcon className="icon" icon={faCommentAlt} />
+        <FontAwesomeIcon className="message-icon" icon={faCommentAlt} />
         {!isMessenger && messageAlert.alert && (
-          <span className="alert-circle-icon"></span>
-        )}
+          <span className="alert-circle-icon"></span>)
+        }
 
       </div>
       <div className="header-items date-block">{currentTime}</div>

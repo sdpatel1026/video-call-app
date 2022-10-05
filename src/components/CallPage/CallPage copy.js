@@ -179,17 +179,17 @@ const CallPages = () => {
         navigator.mediaDevices
             .getDisplayMedia({ cursor: true })
             .then((screenStream) => {
-                peer.replaceTrack(
-                    streamObj.getVideoTracks()[0],
+                peerRef.current.replaceTrack(
+                    localStream.current.getVideoTracks()[0],
                     screenStream.getVideoTracks()[0],
-                    streamObj
+                    localStream.current
                 );
                 setScreenCastStream(screenStream);
                 screenStream.getTracks()[0].onended = () => {
-                    peer.replaceTrack(
+                    peerRef.current.replaceTrack(
                         screenStream.getVideoTracks()[0],
-                        streamObj.getVideoTracks()[0],
-                        streamObj
+                        localStream.current.getVideoTracks()[0],
+                        localStream.current
                     );
                 };
                 setIsPresenting(true);

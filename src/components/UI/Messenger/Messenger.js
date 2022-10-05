@@ -51,7 +51,7 @@ const Messenger = ({ setIsMessenger, sendMsg, messageList }) => {
                     <FontAwesomeIcon className="icon" icon={faCommentAlt} />
                     <p>Chat</p>
                     <FontAwesomeIcon
-                        className="icon"
+                        className="icon cross-icon"
                         icon={faTimes}
                         onClick={() => {
                             setIsMessenger(false);

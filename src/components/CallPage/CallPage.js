@@ -15,7 +15,6 @@ import { useEffect, useState, useReducer, useRef } from "react";
 
 
 const initialState = [];
-let peer = null
 let channel = null
 const CallPage = () => {
     console.log("CallPage()...")
@@ -23,20 +22,17 @@ const CallPage = () => {
     let { id } = useParams();
     const joinUrl = `${SERVER_BASE_URL_WS}${JOIN_ROOM}?room_id=${id}`;
     const meetUrl = `${window.location.origin}${window.location.pathname}`;
-    // const isAdmin = window.location.hash == "#init" ? true : false;
     let alertTimeout = null;
     const userVideo = useRef();
     const localStream = useRef();
     const partnerVideo = useRef();
     const webSocketRef = useRef();
     const peerRef = useRef();
+    const streamSender = useRef([]);
     const [messageList, messageListReducer] = useReducer(
         MessageListReducer,
         initialState
     );
-    const [streamObj, setStreamObj] = useState();
-    const [peerStream, setPeerStream] = useState();
-    const [screenCastStream, setScreenCastStream] = useState();
     const [meetInfoPopup, setMeetInfoPopup] = useState(false);
     const [isPresenting, setIsPresenting] = useState(false);
     const [isMessenger, setIsMessenger] = useState(false);
@@ -57,8 +53,6 @@ const CallPage = () => {
                 audio: true,
             })
             .then((stream) => {
-                // setStreamObj(stream)
-                // userVideo.current.srcObject = stream
                 localStream.current = stream
                 userVideo.current.srcObject = stream
                 webSocketRef.current = new WebSocket(joinUrl)
@@ -67,7 +61,7 @@ const CallPage = () => {
                     webSocketRef.current.send(JSON.stringify({ join: true }));
                 });
                 webSocketRef.current.addEventListener("message", async (e) => {
-                    console.log("getting some signal")
+                    console.log("receiving some signal from the signalling server...")
                     const message = JSON.parse(e.data);
                     if (message.join) {
                         callUser();
@@ -78,13 +72,17 @@ const CallPage = () => {
                     }
 
                     if (message.answer) {
-                        console.log("receiving answer");
-                        peerRef.current.setRemoteDescription(
-                            new RTCSessionDescription(message.answer)
-                        );
+                        console.log("receiving an answer...");
+                        try {
+                            await peerRef.current.setRemoteDescription(
+                                new RTCSessionDescription(message.answer)
+                            );
+                        } catch (err) {
+                            console.log("error in setting remote-description:", err);
+                        }
                     }
                     if (message.iceCandidate) {
-                        console.log("Receiving and Adding ICE Candidate");
+                        console.log("receiving and Adding an ICE Candidate");
                         try {
                             await peerRef.current.addIceCandidate(
                                 message.iceCandidate
@@ -117,35 +115,43 @@ const CallPage = () => {
         }
 
     };
-    const screenShare = () => {
-        navigator.mediaDevices
-            .getDisplayMedia({ cursor: true })
-            .then((screenStream) => {
-                peerRef.current.replaceTrack(
-                    localStream.current.getVideoTracks()[0],
-                    screenStream.getVideoTracks()[0],
-                    localStream.current
-                );
-                setScreenCastStream(screenStream);
-                screenStream.getTracks()[0].onended = () => {
-                    peerRef.current.replaceTrack(
-                        screenStream.getVideoTracks()[0],
-                        localStream.current.getVideoTracks()[0],
-                        localStream.current
-                    );
-                };
-                setIsPresenting(true);
-            });
+    const screenShare = async () => {
+        const displayMediaOption = {
+            video: {
+                cursor: "always"
+            },
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                sampleRate: 44100
+            }
+        };
+
+        try {
+            const mediaStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOption)
+            const screenTrack = mediaStream.getTracks()[0];
+            streamSender.current.find(sender => sender.track.kind === "video").replaceTrack(screenTrack);
+            screenTrack.onended = stopScreenShare;
+            userVideo.current.srcObject = mediaStream;
+            setIsPresenting(true);
+            console.log("screen share successfully");
+        } catch (err) {
+            console.log("getting an error while sharing the screen:", err);
+        }
+
     };
+
     const stopScreenShare = () => {
-        screenCastStream.getVideoTracks().forEach(function (track) {
-            track.stop();
-        });
-        peerRef.current.replaceTrack(
-            screenCastStream.getVideoTracks()[0],
-            localStream.current.getVideoTracks()[0],
-            localStream.current
-        );
+        // screenCastStream.getVideoTracks().forEach(function (track) {
+        //     track.stop();
+        // });
+        try {
+            streamSender.current.find(sender => sender.track.kind === "video").replaceTrack(localStream.current.getTracks()[1]);
+
+        } catch (err) {
+            console.log("getting error while handling screen-track-ended:", err);
+        }
+        userVideo.current.srcObject = localStream.current;
         setIsPresenting(false);
     };
     const toggleAudio = (value) => {
@@ -153,7 +159,6 @@ const CallPage = () => {
         setIsAudio(value);
     };
     const toggleVideo = (value) => {
-        console.log("toggling video:", value)
         localStream.current.getVideoTracks()[0].enabled = value;
         setIsVideo(value)
     }
@@ -166,7 +171,6 @@ const CallPage = () => {
             peerRef.current.ondatachannel = null;
             channel.close();
             peerRef.current.close();
-            console.log("disconnected");
         }
 
         history.push("/");
@@ -194,7 +198,7 @@ const CallPage = () => {
             new RTCSessionDescription(offer)
         )
         localStream.current.getTracks().forEach((track) => {
-            peerRef.current.addTrack(track, localStream.current);
+            streamSender.current.push(peerRef.current.addTrack(track, localStream.current));
         });
         const answer = await peerRef.current.createAnswer();
         await peerRef.current.setLocalDescription(answer);
@@ -208,7 +212,7 @@ const CallPage = () => {
         peerRef.current = createPeer();
 
         localStream.current.getTracks().forEach((track) => {
-            peerRef.current.addTrack(track, localStream.current);
+            streamSender.current.push(peerRef.current.addTrack(track, localStream.current));
         });
     };
 
@@ -220,7 +224,7 @@ const CallPage = () => {
 
     }
     const handleNegotiationNeeded = async () => {
-        console.log("Creating Offer");
+        console.log("handleNegotiationNeeded...");
 
         try {
             const myOffer = await peerRef.current.createOffer();
@@ -235,9 +239,8 @@ const CallPage = () => {
     };
 
     const handleIceCandidateEvent = (e) => {
-        console.log("Found Ice Candidate");
+        console.log("Found an Ice Candidate");
         if (e.candidate) {
-            console.log(e.candidate);
             webSocketRef.current.send(
                 JSON.stringify({ iceCandidate: e.candidate })
             );

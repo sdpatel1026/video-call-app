@@ -6,6 +6,7 @@ import { faVideo, faKeyboard } from "@fortawesome/free-solid-svg-icons";
 import { SERVER_BASE_URL_HTTP, CREATE_ROOM } from "../../utils/apiEndpoints";
 import { getRequest } from "../../utils/apiRequest";
 import { useState } from "react";
+import meetingGridImg from "../../images/meeting_grid.jpg"
 
 
 const HomePage = () => {
@@ -13,8 +14,6 @@ const HomePage = () => {
   const [meetingID, setMeetingID] = useState("");
   const history = useHistory();
   const startCall = async () => {
-    console.log("preoces enc", process.env);
-    console.log("create-room:", `${SERVER_BASE_URL_HTTP}${CREATE_ROOM}`);
     const response = await getRequest(`${SERVER_BASE_URL_HTTP}${CREATE_ROOM}`);
     if (response.Result) {
       const roomID = response.Result.room_id;
@@ -23,15 +22,11 @@ const HomePage = () => {
       console.log("getting error in creating room: ");
     }
 
-
-    // history.push(`/${uid}#init`);
-
   };
   const joinMeeting = () => {
     if (!meetingID || (meetingID.includes("/room") || meetingID.includes("/"))) {
       setMeetingID("");
     } else {
-      // console.log("info: ", meetingID)
       history.push(`/room/${meetingID}`);
     }
 
@@ -46,7 +41,7 @@ const HomePage = () => {
             <h2>Premium video meetings. Now free for everyone.</h2>
             <p>
               We re-engineered the service we built for secure business
-              meetings, Google Meet, to make it free and available for all.
+              meetings, P2P Meet, to make it free and available for all.
             </p>
             <div className="action-btn">
               <button className="btn green" onClick={() => startCall()}>
@@ -63,12 +58,12 @@ const HomePage = () => {
             </div>
           </div>
           <div className="help-text">
-            <a href="">Learn more</a> about Google Meet
+            <a href="">Learn more</a> about P2P Meet
           </div>
         </div>
         <div className="right-side">
           <div className="content">
-            <img src="https://www.gstatic.com/meet/google_meet_marketing_ongoing_meeting_grid_427cbb32d746b1d0133b898b50115e96.jpg" />
+            <img src={meetingGridImg} />
           </div>
         </div>
       </div>
