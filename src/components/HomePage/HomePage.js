@@ -14,10 +14,11 @@ const HomePage = () => {
   const [meetingID, setMeetingID] = useState("");
   const history = useHistory();
   const startCall = async () => {
+
     const response = await getRequest(`${SERVER_BASE_URL_HTTP}${CREATE_ROOM}`);
     if (response.Result) {
       const roomID = response.Result.room_id;
-      history.push(`/room/${roomID}#init`)
+      history.push(`${CREATE_ROOM}/${roomID}#init`);
     } else {
       console.log("getting error in creating room: ");
     }
