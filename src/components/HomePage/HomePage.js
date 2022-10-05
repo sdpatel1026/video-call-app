@@ -14,7 +14,7 @@ const HomePage = () => {
   const [meetingID, setMeetingID] = useState("");
   const history = useHistory();
   const startCall = async () => {
-
+    console.log("url:", `${SERVER_BASE_URL_HTTP}${CREATE_ROOM}`)
     const response = await getRequest(`${SERVER_BASE_URL_HTTP}${CREATE_ROOM}`);
     if (response.Result) {
       const roomID = response.Result.room_id;
